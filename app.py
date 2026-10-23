@@ -29,6 +29,9 @@ def current_user():
         return USERS.get(token)
     return None
 
+def can_access_appointment(user, appointment):
+    return user["role"] == "admin" or appointment["patient_id"] == user["user_id"]
+
 @app.route("/appointments", methods=["GET"])
 def get_appointments():
     user = current_user()
@@ -51,6 +54,9 @@ def get_appointment(appointment_id):
     if not apt:
         return jsonify({"error": "not found"}), 404
     
+    if not can_access_appointment(user, apt):
+        return jsonify({"error": "not found"}), 404
+
     return jsonify(apt), 200
 
 @app.route("/appointments/<int:appointment_id>", methods=["DELETE"])
@@ -63,5 +69,8 @@ def cancel_appointment(appointment_id):
     if not apt:
         return jsonify({"error": "not found"}), 404
     
+    if not can_access_appointment(user, apt):
+        return jsonify({"error": "not found"}), 404
+
     apt["status"] = "cancelled"
     return jsonify(apt), 200
